@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OptiSai Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+  <style>
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; padding: 2rem; }
+    h1 { margin-bottom: 2rem; }
+    .chart-container { position: relative; width: 100%; cursor: pointer; }
+    .modal-content canvas { width: 100% !important; height: auto !important; }
+    .recommendations, .ab-section {
+      background: #ffffff;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 2rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="text-center">OptiSai Marketing Optimization Dashboard</h1>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="chart-container" data-bs-toggle="modal" data-bs-target="#chartModal" data-chart="ctrChart">
+        <canvas id="ctrChart"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="chart-container" data-bs-toggle="modal" data-bs-target="#chartModal" data-chart="salesChart">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="chart-container" data-bs-toggle="modal" data-bs-target="#chartModal" data-chart="roiChart">
+        <canvas id="roiChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="recommendations">
+    <h4>Daily Recommendations</h4>
+    <ul id="recommendationList" class="list-group list-group-flush mt-3"></ul>
+  </div>
+
+  <div class="ab-section">
+    <h4>A/B Test Suggestions</h4>
+    <ul id="abList" class="list-group list-group-flush mt-3"></ul>
+  </div>
+</div>
+
+<!-- Modal for Expanded Chart -->
+<div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content p-3">
+      <canvas id="expandedChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+let charts = {};
+let expandedChartInstance = null;
+
+const chartConfigs = [
+  { id: 'ctrChart', label: 'CTR (%)', color: 'rgba(54, 162, 235, 0.8)', title: 'CTR Over Time' },
+  { id: 'salesChart', label: 'Total Sales ($)', color: 'rgba(75, 192, 192, 0.8)', title: 'Shopify Sales Over Time' },
+  { id: 'roiChart', label: 'ROI (Sales / Spend)', color: 'rgba(153, 102, 255, 0.8)', title: 'ROI Over Time' }
+];
+
+async function fetchData(endpoint) {
+  const res = await fetch(endpoint);
+  return await res.json();
+}
+
+async function renderCharts() {
+  const metaAds = await fetchData('/api/meta_ads');
+  const shopify = await fetchData('/api/shopify');
+  const metaDates = metaAds.map(d => d.date).reverse();
+  const ctr = metaAds.map(d => d.ctr).reverse();
+  const spend = metaAds.map(d => d.spend).reverse();
+  const sales = shopify.map(d => d.total_sales).reverse();
+  const roi = metaAds.map((d, i) => {
+    const sale = shopify[i] ? shopify[i].total_sales : 0;
+    return d.spend > 0 ? sale / d.spend : 0;
+  }).reverse();
+
+  const dataMap = {
+    'ctrChart': ctr.map(x => (x * 100).toFixed(2)),
+    'salesChart': sales,
+    'roiChart': roi.map(x => x.toFixed(2))
+  };
+
+  chartConfigs.forEach(cfg => {
+    charts[cfg.id] = new Chart(document.getElementById(cfg.id), {
+      type: 'line',
+      data: {
+        labels: metaDates,
+        datasets: [{
+          label: cfg.label,
+          data: dataMap[cfg.id],
+          borderColor: cfg.color,
+          fill: false,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: cfg.title
+          }
+        }
+      }
+    });
+  });
+
+  const modalEl = document.getElementById('chartModal');
+  modalEl.addEventListener('show.bs.modal', function (event) {
+    const chartId = event.relatedTarget.getAttribute('data-chart');
+    const sourceChart = charts[chartId];
+    const ctx = document.getElementById('expandedChart').getContext('2d');
+    if (expandedChartInstance) {
+      expandedChartInstance.destroy();
+    }
+    setTimeout(() => {
+      expandedChartInstance = new Chart(ctx, {
+        type: sourceChart.config.type,
+        data: sourceChart.data,
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: sourceChart.options.plugins.title.text + " (Expanded View)"
+            }
+          }
+        }
+      });
+    }, 300);
+  });
+}
+
+async function renderRecommendations() {
+  const recs = await fetchData('/api/recommendations');
+  const fullList = document.getElementById('recommendationList');
+  const abList = document.getElementById('abList');
+  recs.forEach(rec => {
+    const li = document.createElement('li');
+    li.textContent = rec;
+    li.classList.add("list-group-item");
+    fullList.appendChild(li);
+
+    if (rec.toLowerCase().includes("a/b test")) {
+      const abLi = document.createElement('li');
+      abLi.textContent = rec;
+      abLi.classList.add("list-group-item");
+      abList.appendChild(abLi);
+    }
+  });
+}
+
+renderCharts();
+renderRecommendations();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
