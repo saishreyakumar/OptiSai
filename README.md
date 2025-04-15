@@ -29,18 +29,29 @@ OptiSai is a proof-of-concept platform designed to optimize Meta Ads performance
 ## Project Structure
 
 ```
+
+
 optisai/
 ├── backend/
-│   ├── api/                # Flask application routes
-│   ├── models/             # ML model logic (trend prediction)
-│   └── utils/              # Mock data generators and recommendations
-│
+│   ├── api/
+│   │   └── app.py                     # Flask API entry point and route handlers
+│   ├── models/
+│   │   └── trend_model.py             # Simple linear regression model for trends
+│   └── utils/
+│       ├── meta_ads_mock.py           # Mock Meta Ads data generator
+│       ├── shopify_mock.py            # Mock Shopify sales data generator
+│       └── recommendations.py         # ROI/CTR-based insights & A/B test suggestions
 ├── frontend/
-│   ├── static/             # JS, CSS (if needed)
-│   └── templates/          # index.html dashboard template
-├── notebooks/              # EDA scripts (optional)
-├── scripts/                # Placeholder for future automation
-└── requirements.txt        # Python dependencies
+│   └── templates/
+│       └── index.html                 # Responsive dashboard using Bootstrap & Chart.js
+│
+├── Dockerfile                         # Docker for deployment
+├── render.yaml                        # Render.com deployment configuration
+├── requirements.txt                   # Download needed libraries
+├── README.md                          # A Readme doc for better understanding
+├── Architecture_diagram.png           # Architecture diagram
+
+
 ```
 
 ---
@@ -51,7 +62,7 @@ optisai/
 - **Backend**: Python, Flask
 - **ML**: Scikit-learn (LinearRegression)
 - **Mock Data**: Custom generators (no real tokens required)
-- **Deployment**: Locally runnable via Flask
+- **Deployment**: Locally runnable via Flask or hosted using Docker/Render
 
 ---
 
@@ -76,3 +87,14 @@ optisai/
 Visit: `http://localhost:5000`
 
 ---
+
+## Deployment (Docker + Render)
+
+### Using Docker (local or cloud-based)
+
+```bash
+docker build -t optisai .
+docker run -p 10000:10000 optisai
+```
+
+Visit: `http://localhost:10000`
