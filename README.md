@@ -1,8 +1,6 @@
 # OptiSai – AI-Powered Marketing Optimization Platform
 
-OptiSai is a proof-of-concept platform designed to optimize Meta Ads performance using machine learning, simulated Meta and Shopify APIs, and a modern full-stack interface. It analyzes advertising and sales data to provide actionable insights, track ROI, and recommend A/B tests and budget adjustments.
-
----
+It is a is a proof-of-concept platform designed to optimize Meta Ads performance with ML, simulated Meta and Shopify APIs. It tracks ROI, and recommend A/B tests and budget adjustments.
 
 ## Features
 
@@ -90,11 +88,13 @@ Visit: `http://localhost:5000`
 
 ## Deployment (Docker + Render)
 
-### Using Docker (local or cloud-based)
+### Using Docker
 
 ```bash
 docker build -t optisai .
 docker run -p 10000:10000 optisai
 ```
 
-Visit: `http://localhost:10000`
+### For Render
+
+Visit: `https://optisai.onrender.com`
